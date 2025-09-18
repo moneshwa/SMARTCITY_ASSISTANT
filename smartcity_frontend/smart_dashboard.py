@@ -1,9 +1,13 @@
 import streamlit as st
+import pandas as pd
 from api_client import (
     get_summary_from_backend,
     submit_feedback_to_backend,
     upload_document_to_backend,
     search_documents_in_backend,
+    get_chat_response_from_backend,
+    get_forecast_from_backend,
+    get_anomalies_from_backend
 )
 
 # Function to load a local CSS file
@@ -22,9 +26,10 @@ local_css("styles/style.css")
 # --- Sidebar Navigation ---
 with st.sidebar:
     st.header("Navigation")
+    # Add the final pages to the options
     selected_page = st.radio(
         "Go to",
-        ["Policy Summarizer", "Citizen Feedback", "Document Management"],
+        ["Policy Summarizer", "Citizen Feedback", "Document Management", "Chat Assistant", "KPI Forecasting", "Anomaly Detection"],
         label_visibility="collapsed"
     )
     st.sidebar.image("https://images.pexels.com/photos/325185/pexels-photo-325185.jpeg", use_container_width=True)
@@ -103,3 +108,73 @@ elif selected_page == "Document Management":
                     st.warning("No results found or an error occurred.")
         else:
             st.warning("Please enter a search query.")
+
+# --- ADD THIS NEW PAGE ---
+elif selected_page == "Chat Assistant":
+    st.header("Chat with the Smart City Assistant")
+
+    # Initialize chat history in session state if it doesn't exist
+    if "messages" not in st.session_state:
+        st.session_state.messages = [{"role": "assistant", "content": "How can I help you with the smart city today?"}]
+
+    # Display past messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Get user input using the chat input widget
+    if prompt := st.chat_input("What is up?"):
+        # Add user message to history and display it
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Get assistant response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                response = get_chat_response_from_backend(prompt)
+                st.markdown(response)
+        
+        # Add assistant response to history
+        st.session_state.messages.append({"role": "assistant", "content": response})
+
+# --- ADD THESE FINAL TWO PAGES ---
+elif selected_page == "KPI Forecasting":
+    st.header("📈 Key Performance Indicator Forecasting")
+    st.write("Upload a CSV file with historical data to predict the next year's value.")
+    
+    uploaded_csv = st.file_uploader("Choose a CSV file", type="csv")
+    if uploaded_csv is not None:
+        kpi_column = st.text_input("Enter the name of the column to forecast (e.g., 'energy', 'water_usage')")
+        if st.button("Forecast Next Year"):
+            if kpi_column:
+                with st.spinner("Calculating forecast..."):
+                    result = get_forecast_from_backend(uploaded_csv, kpi_column)
+                    if result:
+                        st.success(f"Forecast for '{result['kpi']}' in {result['predicted_year']}: **{result['predicted_value']}**")
+            else:
+                st.warning("Please enter the column name.")
+
+elif selected_page == "Anomaly Detection":
+    st.header("⚠️ Anomaly Detection")
+    st.write("Upload a CSV file to check for anomalies based on a threshold value.")
+    
+    uploaded_csv = st.file_uploader("Choose a CSV file", type="csv")
+    if uploaded_csv is not None:
+        df = pd.read_csv(uploaded_csv)
+        st.write("Data Preview:")
+        st.dataframe(df.head())
+        
+        kpi_column = st.selectbox("Select the column to check for anomalies", df.columns)
+        threshold = st.number_input("Set the threshold value (records above this will be flagged)", value=1000.0)
+        
+        if st.button("Check for Anomalies"):
+            # Reset file read position for API call
+            uploaded_csv.seek(0)
+            with st.spinner("Checking..."):
+                result = get_anomalies_from_backend(uploaded_csv, kpi_column, threshold)
+                if result:
+                    st.success(f"Found **{result['anomaly_count']}** anomalies.")
+                    if result['anomalies']:
+                        st.write("Anomalous Records:")
+                        st.dataframe(pd.DataFrame(result['anomalies']))
