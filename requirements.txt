@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+streamlit
+requests
+python-dotenv
+pydantic-settings
+sentence-transformers
+pinecone-client
+scikit-learn
+pandas
+# libraries for Hugging Face integration
+langchain
+langchain-huggingface
+huggingface-hub
+langchain-google-genai
