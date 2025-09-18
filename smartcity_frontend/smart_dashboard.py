@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from api_client import * # Import all functions
+from streamlit_option_menu import option_menu # Import the new menu
 
 def local_css(file_name):
     with open(file_name) as f:
@@ -9,27 +10,26 @@ def local_css(file_name):
 st.set_page_config(page_title="Smart City Assistant", page_icon="🏙️", layout="wide")
 local_css("styles/style.css")
 
-# --- NEW SIDEBAR LAYOUT ---
+# --- NEW SIDEBAR LAYOUT using streamlit-option-menu ---
 with st.sidebar:
-    st.header("Navigation")
-    selected_page = st.radio(
-        "Go to",
-        ["Policy Summarizer", "Citizen Feedback", "Document Management", "Chat Assistant", "KPI Forecasting", "Anomaly Detection"],
-        label_visibility="collapsed"
+    selected_page = option_menu(
+        menu_title="Smart City Assistant",  # Main title
+        options=["Summarizer", "Feedback", "Documents", "Chat", "Forecasting", "Anomalies"], # Page names
+        icons=['text-paragraph', 'chat-quote-fill', 'file-earmark-text', 'chat-dots-fill', 'bar-chart-line', 'exclamation-triangle'],  # Bootstrap icons
+        menu_icon="cast",  # Main icon
+        default_index=0,  # Default page
+        styles={
+            "container": {"padding": "0!important", "background-color": "#0E1117"},
+            "icon": {"color": "white", "font-size": "20px"}, 
+            "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#4A4A6A"},
+            "nav-link-selected": {"background-color": "#4A4A6A"},
+        }
     )
-    
-    # Add a visual separator
-    st.divider()
-
-    # Add a new section at the bottom
-    st.header("Help")
-    st.info("This is a demo project for Naan Mudhalvan. Select a feature above to get started.")
-    # The st.sidebar.image line has been removed
 
 st.title("Sustainable Smart City Assistant")
 
-# --- Page Content (The rest of the code is unchanged) ---
-if selected_page == "Policy Summarizer":
+# --- Page Content (The logic is the same, but the page names are updated) ---
+if selected_page == "Summarizer":
     st.header("Policy Summarizer")
     policy_text = st.text_area("Paste policy text:", height=200, label_visibility="collapsed")
     if st.button("Generate Summary"):
@@ -39,7 +39,7 @@ if selected_page == "Policy Summarizer":
                 if summary: st.write(summary)
         else: st.warning("Please paste some policy text.")
 
-elif selected_page == "Citizen Feedback":
+elif selected_page == "Feedback":
     st.header("Submit Your Feedback")
     with st.form("feedback_form"):
         name = st.text_input("Your Name")
@@ -51,7 +51,7 @@ elif selected_page == "Citizen Feedback":
                     st.success("Feedback submitted!")
             else: st.warning("Please fill out all fields.")
 
-elif selected_page == "Document Management":
+elif selected_page == "Documents":
     st.header("Upload & Search Documents")
     uploaded_file = st.file_uploader("Upload a .txt policy document", type="txt")
     if uploaded_file:
@@ -73,13 +73,13 @@ elif selected_page == "Document Management":
                 else: st.warning("No results found.")
         else: st.warning("Please enter a query.")
 
-elif selected_page == "Chat Assistant":
+elif selected_page == "Chat":
     st.header("Chat Assistant")
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "assistant", "content": "How can I help you?"}]
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg["content"])
-    if prompt := st.chat_input():
+    if prompt := st.chat_input("Ask a question..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
         with st.spinner("Thinking..."):
@@ -87,7 +87,7 @@ elif selected_page == "Chat Assistant":
             st.session_state.messages.append({"role": "assistant", "content": response})
             st.chat_message("assistant").write(response)
 
-elif selected_page == "KPI Forecasting":
+elif selected_page == "Forecasting":
     st.header("📈 Key Performance Indicator Forecasting")
     uploaded_csv = st.file_uploader("Choose a CSV file with a 'year' column", type="csv")
     if uploaded_csv is not None:
@@ -100,7 +100,7 @@ elif selected_page == "KPI Forecasting":
                         st.success(f"Forecast for '{result['kpi']}' in {result['predicted_year']}: **{result['predicted_value']}**")
             else: st.warning("Please enter the column name.")
 
-elif selected_page == "Anomaly Detection":
+elif selected_page == "Anomalies":
     st.header("⚠️ Anomaly Detection")
     uploaded_csv = st.file_uploader("Choose a CSV file to check for anomalies", type="csv")
     if uploaded_csv is not None:
