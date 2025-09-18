@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.services.llm_service import ask_llm
+from ..services.llm_service import ask_llm
 
 # A Pydantic model to define the structure of the request body
 # This tells FastAPI to expect a JSON object with a single key "text"

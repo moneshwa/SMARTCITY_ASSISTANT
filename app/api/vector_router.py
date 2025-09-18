@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel
-from app.vectorstore.document_embedder import process_and_embed_document
-from app.vectorstore.document_retriever import search_documents
+from ..vectorstore.document_embedder import process_and_embed_document
+from ..vectorstore.document_retriever import search_documents
 
 router = APIRouter()
 
